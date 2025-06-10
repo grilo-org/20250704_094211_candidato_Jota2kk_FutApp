@@ -1,106 +1,131 @@
-import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
-import StatRow from "../components/Inputs/StatsRow";
+import React, { useEffect, useState } from "react";
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, ScrollView } from "react-native";
+import { useRoute } from "@react-navigation/native";
+
+type Fixture = {
+  fixture: { id: number; date: string };
+  teams: { home: { name: string }; away: { name: string } };
+};
+
+type TeamStatistics = {
+  fixtures: {
+    wins: { home: number; away: number; total: number };
+    draws: { home: number; away: number; total: number };
+    loses: { home: number; away: number; total: number };
+    played: { home: number; away: number; total: number };
+  };
+};
 
 export default function MatchStats() {
+  const { teamId } = useRoute().params as { teamId: number };
+
+  const [fixtures, setFixtures] = useState<Fixture[]>([]);
+  const [stats, setStats] = useState<TeamStatistics | null>(null);
+
+  const [loadingFixtures, setLoadingFixtures] = useState(true);
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  //partidas
+  useEffect(() => {
+    const fetchFixtures = async () => {
+      try {
+        const res = await fetch(
+          `https://v3.football.api-sports.io/fixtures?team=${teamId}&season=2021`,
+          { headers: { "x-apisports-key": "Sua chave da API" } }
+        );
+        const json = await res.json();
+        setFixtures(json.response);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoadingFixtures(false);
+      }
+    };
+    fetchFixtures();
+  }, [teamId]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(
+          `https://v3.football.api-sports.io/teams/statistics?team=${teamId}&season=2021&league=741`,
+          { headers: { "x-apisports-key": " Sua chave da API" } }
+        );
+        const json = await res.json();
+        const statObj: TeamStatistics = Array.isArray(json.response)
+          ? json.response[0]
+          : json.response;
+        setStats(statObj);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    fetchStats();
+  }, [teamId]);
+
+
+  if (loadingFixtures || loadingStats) {
+    return <ActivityIndicator style={styles.center} />;
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Estatísticas da Partida</Text>
+    <ScrollView contentContainerStyle={{ padding: 18 }}>
+      {stats && (
+        <View style={styles.card}>
+          <Text style={styles.teams}>Estatísticas gerais</Text>
+          <Text style={styles.text}>Jogos: {stats.fixtures.played.total}</Text>
+          <Text style={styles.text}>Vitórias: {stats.fixtures.wins.total}</Text>
+          <Text style={styles.text}>Derrotas: {stats.fixtures.loses.total}</Text>
+        </View>
+      )}
 
-      <View style={styles.scoreContainer}>
-        <Text style={styles.team}>Barcelona</Text>
-        <Text style={styles.score}>2</Text>
-        <Text style={styles.score}>2</Text>
-        <Text style={styles.team}>Real Sociedad</Text>
-      </View>
-
-      <View style={styles.statsBox}>
-        <StatRow value1="1" label="Chutes" value2="4" />
-        <StatRow value1="55%" label="Posse de bola" value2="45%" />
-        <StatRow value1="88%" label="Precisão de passe" value2="85%" />
-        <StatRow value1="11" label="Faltas" value2="13" />
-      </View>
-
-      <View style={styles.playerBox}>
-        <Text style={styles.subTitle}>Melhor jogador</Text>
-        <Text style={styles.player}>Robert Lewandowski - Nota 8.4</Text>
-
-        <Text style={styles.subTitle}>Pior jogador</Text>
-        <Text style={styles.player}>Martín Zubimendi - Nota 6.1</Text>
-      </View>
-    </View>
+      <FlatList
+        data={fixtures}
+        keyExtractor={(item) => item.fixture.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Text style={styles.teams}>
+              {item.teams.home.name} x {item.teams.away.name}
+            </Text>
+            <Text style={styles.date}>
+              {new Date(item.fixture.date).toLocaleString()}
+            </Text>
+          </View>
+        )}
+      />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems:"center",
-    backgroundColor: "#1e1e1e",
-    justifyContent:"space-evenly",
-    flexDirection:"column",
-    padding: 24,
-  },
-  title: {
-    color: "#fff",
-    fontSize: 26,
+  center: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center"
+   },
+
+  card: { 
+    backgroundColor: "#222", 
+    padding: 19, 
+    marginVertical: 8, 
+    borderRadius: 8
+   },
+
+  teams: { 
+    color: "white", 
+    fontSize: 20, 
     fontWeight: "bold",
-    marginBottom: 24,
-    textAlign: "center",
-  },
-  scoreContainer: {
-    width:"100%",
-    flexDirection: "row",
-    justifyContent: "space-evenly",
-    padding:4,
-    marginBottom: 10,
-  },
-  team: {
-    color: "#fff",
-    fontSize: 18,
-  },
-  score: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  statsBox: {
-    width:"100%",
-    alignItems:"center",
-    justifyContent:"space-evenly",
-    backgroundColor: "#2a2a2a",
-    borderRadius: 8,
-    padding: 24,
-    marginBottom: 2,
-  },
-  statRow: {
-    flexDirection: "column",
-    justifyContent: "space-evenly",
-    marginVertical: 6,
-  },
-  statLabel: {
-    color: "#ccc",
-    fontSize: 16,
-  },
-  statValue: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  playerBox: {
-    width:"100%",    
-    padding: 16,
-    backgroundColor: "#333",
-    borderRadius: 8,
-  },
-  subTitle: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-    marginTop: 10,
-  },
-  player: {
-    color: "#ccc",
-    fontSize: 15,
-    marginBottom: 6,
-  },
+   },
+
+  date: { 
+    color: "#ccc", 
+    marginTop: 4
+   },
+
+   text:{
+    color:"white",
+    fontSize:12
+   },
 });

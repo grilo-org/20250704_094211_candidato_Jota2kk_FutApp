@@ -1,17 +1,15 @@
 import { View, Text, StyleSheet } from "react-native";
 import React from "react";
-import InputTeam from "../components/Inputs/Input_team";
 import InputMatch from "../components/Inputs/Input_match";
-import ShowStatistics from "../components/button/ShowStatistics";
 
 export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.home}>
-        <Text style={styles.text}>Resultado Da Partida</Text>
-        <InputTeam/>
+        <Text style={styles.text}>
+          Brasileirão 2021
+        </Text>
         <InputMatch/>
-        <ShowStatistics/>
       </View>
     </View>
   );
@@ -30,14 +28,14 @@ const styles = StyleSheet.create({
         flexDirection:"column",
         justifyContent:"center",
         alignItems:"center",
+        height:"70%",
 
     },
 
     text: {
-        width:"65%",
         fontSize:38,
         textAlign:"center",
-        margin:12,
+        margin:18,
         fontWeight:"bold",
         color:"white"
     }
